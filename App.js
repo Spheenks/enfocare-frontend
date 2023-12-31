@@ -13,6 +13,7 @@ import {AppState, SafeAreaView, StyleSheet} from 'react-native';
 
 import Navigation from './src/Components/navigation';
 import {AuthProvider} from './src/context/AuthContext';
+import {EnfocareApiProvider} from './src/api/EnfocareApi';
 
 const App = () => {
   const appState = useRef(AppState.currentState);
@@ -42,7 +43,9 @@ const App = () => {
       {/* <UserContextProvider> */}
 
       <AuthProvider>
-        <Navigation />
+        <EnfocareApiProvider>
+          <Navigation />
+        </EnfocareApiProvider>
       </AuthProvider>
 
       {/* </UserContextProvider> */}

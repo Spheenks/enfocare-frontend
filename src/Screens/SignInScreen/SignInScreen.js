@@ -44,20 +44,8 @@ const SignInScreen = () => {
   const [verificationPending, setVerificationPending] = useState(false);
   const [user, setUser] = useState({});
 
-  const [email, setEmail] = useState(null);
-  const [password, setPassword] = useState(null);
-
-  useEffect(() => {
-    if (user != null) {
-      // navigation.navigate('DashboardScreen');
-
-      navigation.navigate('ProfileSetupScreen');
-    }
-  }, [user]);
-
-  const onSignInPressed = async data => {
-    const authenticatedUser = await authenticate(data.email, data.password);
-    setUser(authenticatedUser);
+  const onSignInPressed = data => {
+    authenticate(data.email, data.password);
   };
   const onForgotPasswordPressed = () => {
     // navigation.navigate('ResetPasswordScreen');

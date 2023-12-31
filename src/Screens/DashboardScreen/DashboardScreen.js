@@ -1,73 +1,42 @@
-import React, {useEffect, useState} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  AppState,
-  Pressable,
-  Image,
-  TouchableOpacity,
-} from 'react-native';
+import React, {useContext, useEffect, useState} from 'react';
+import {View, StyleSheet} from 'react-native';
+import {AuthContext} from '../../context/AuthContext';
+import CustomButton from '../../Components/CustomButton';
+import Spinner from 'react-native-loading-spinner-overlay';
+import {ProfileSetup} from '../../api/EnfocareApi';
+import {useNavigation} from '@react-navigation/native';
 
 const DashboardScreen = () => {
+  const navigation = useNavigation();
+  const {logout, isLoading} = useContext(AuthContext);
+  // const [userProfile, setUserProfile] = useState(null); // Initialize as null
+  // const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+  const onLogoutPressed = () => {
+    logout();
+  };
+
   return (
     <View style={styles.root}>
+      <Spinner
+        visible={isLoading}
+        textContent={'Loading...'}
+        textStyle={styles.spinnerTextStyle}
+      />
+
       <View>
-        <Text style={{color: 'black'}}>HELLO TANGINAMO</Text>
+        <CustomButton text="Logout" type="PRIMARY" onPress={onLogoutPressed} />
       </View>
     </View>
   );
 };
-const styles = StyleSheet.create({
-  nameCont: {
-    fontWeight: 'bold',
-    fontSize: 30,
-  },
-  settingsContainer: {
-    position: 'absolute',
-    height: 70,
-    width: '100%',
-    top: 0,
-  },
-  settingsIconContainer: {
-    position: 'absolute',
-    height: 50,
-    width: 50,
-    top: 10,
-    right: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarCont: {
-    borderWidth: 1,
-    borderColor: 'black',
-    height: 180,
-    width: 180,
-    borderRadius: 100,
-  },
-  previewImage: {
-    height: '100%',
-    width: '100%',
-    borderRadius: 100,
-    backgroundColor: 'red',
-  },
 
+const styles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarAndName: {
-    height: 250,
-    width: '80%',
-    borderBottomColor: '#D3D3D3',
-    borderBottomWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  head: {
-    color: 'black',
-  },
 });
+
 export default DashboardScreen;

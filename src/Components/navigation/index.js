@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useContext, useEffect} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import SignInScreen from '../../Screens/SignInScreen';
@@ -6,6 +6,8 @@ import SignUpScreen from '../../Screens/SignUpScreen';
 // import ResetPasswordScreen from "../../Screens/ResetPasswordScreen";
 import DashboardScreen from '../../Screens/DashboardScreen';
 import ProfileSetupSceen from '../../Screens/ProfileSetupSceen';
+import {AuthContext} from '../../context/AuthContext';
+import {EnfocareApi} from '../../api/EnfocareApi';
 // import ChatScreen from "../../Screens/ChatScreen/ChatScreen";
 // import CallingScreen from "../../Screens/CallingScreen/CallingScreen";
 // import ConsultListingScreen from "../../Screens/ConsultListingScreen";
@@ -18,14 +20,35 @@ import ProfileSetupSceen from '../../Screens/ProfileSetupSceen';
 
 const Stack = createNativeStackNavigator();
 const Navigation = () => {
+  const {userInfo} = useContext(AuthContext);
+  const {userProfile} = useContext(EnfocareApi);
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{headerShown: false}}>
-        <Stack.Screen name="SignInScreen" component={SignInScreen} />
-        <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
-        {/* <Stack.Screen name="ResetPasswordScreen" component={ResetPasswordScreen}/> */}
-        <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
-        <Stack.Screen name="ProfileSetupScreen" component={ProfileSetupSceen} />
+        {userInfo.token ? (
+          <>
+            {/* <Stack.Screen name="ResetPasswordScreen" component={ResetPasswordScreen}/> */}
+
+            {!userProfile ? (
+              <Stack.Screen
+                name="DashboardScreen"
+                component={DashboardScreen}
+              />
+            ) : (
+              <Stack.Screen
+                name="ProfileSetupScreen"
+                component={ProfileSetupSceen}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="SignInScreen" component={SignInScreen} />
+            <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+          </>
+        )}
+
         {/* <Stack.Screen name="ChatScreen" component={ChatScreen}/>
                 <Stack.Screen name="CallingScreen" component={CallingScreen}/>
                 <Stack.Screen name="IncomingCallScreen" component={IncomingCallScreen}/>

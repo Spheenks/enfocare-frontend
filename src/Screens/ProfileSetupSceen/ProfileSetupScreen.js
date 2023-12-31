@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useContext} from 'react';
 import {StyleSheet, View, Text, Button, ScrollView} from 'react-native';
 import CustomInput from '../../Components/CustomInput';
 import {useForm, w} from 'react-hook-form';
@@ -11,10 +11,14 @@ import moment from 'moment';
 import CustomPicker from '../../Components/CustomPicker';
 import CustomDatePicker from '../../Components/CustomDatePicker/CustomDatePicker';
 import CustomPhoneInput from '../../Components/CustomPhoneInput/CustomPhoneInput';
+import {EnfocareApi} from '../../api/EnfocareApi';
+import {AuthContext} from '../../context/AuthContext';
 
 const NAME_REGEX = /^[A-Za-z0-9 ]+$/;
 const NUM_REGEX = /\d+/g;
 const ProfileSetupScreen = () => {
+  const {setProfile} = useContext(EnfocareApi);
+  const {userInfo} = useContext(AuthContext);
   // ASYNC STORAGE CONTROL
   const [storedAsyncedEmail, setStoredAsyncedEmail] = useState('');
   const [storedAsyncedPassword, setStoredAsyncedPassword] = useState('');
@@ -48,9 +52,7 @@ const ProfileSetupScreen = () => {
   const birthWatcher = watch('birthday');
   const phoneNumWatcher = watch('phonenumber');
 
-  const age = (
-    moment(new Date()).year() - moment(birthWatcher).year()
-  ).toString();
+  const age = moment(new Date()).year() - moment(birthWatcher).year();
   const bmi =
     703 *
     (weightWatcher / (heightWatcher * 0.393701 * (heightWatcher * 0.393701)));
@@ -69,12 +71,14 @@ const ProfileSetupScreen = () => {
   const [birthDay, setBirthDay] = useState(new Date());
   const [specialization, setSpecialization] = useState('');
   const [classification, setClassification] = useState('');
+  const [profileAge, setProfileAge] = useState();
 
   // FALSE SETTER
   const [falseVal, setFalseVal] = useState(false);
 
   // OPTION VALUES CONTROL
   const accountType = ['PATIENT', 'DOCTOR'];
+  const specializations = ['MANGTUTULI', 'KWAK KWAK', 'JOHNNY SINS'];
   const bloodTypesSelection = [
     'A+',
     'B+',
@@ -107,6 +111,10 @@ const ProfileSetupScreen = () => {
     }
   }, [bmi]);
 
+  useEffect(() => {
+    setProfileAge(age);
+  }, [age]);
+
   // FUNCTIONS
 
   const togglePicker = () => {
@@ -115,7 +123,53 @@ const ProfileSetupScreen = () => {
 
   const getSpecs = async () => {};
 
-  const onSetupPressed = data => {
+  const onSetupPressed = async data => {
+    try {
+      // Call the setProfile method from the context
+      const response = await setProfile({
+        accountType: 'PATIENT',
+        firstname: data.firstname,
+        middlename: data.middlename,
+        lastname: data.lastname,
+        birthday: data.birthday,
+        gender: data.gender,
+        age: profileAge,
+        height: data.height,
+        weight: data.weight,
+        bloodType: data.bloodtype,
+        bmi: bmi,
+        classification: classification,
+        phone: data.phonenumber,
+      });
+
+      // Handle the response as needed
+      console.log('Profile setup response:', response);
+
+      // Navigate to the dashboard or another screen upon successful setup
+      // navigation.navigate("DashboardScreen");
+    } catch (error) {
+      console.error('Profile setup error:', error);
+    }
+    // console.log('AGAGAGAGAG');
+    // userObj = {
+    //   id: user.uid,
+    //   email: user.email,
+    //   accountType: '',
+    //   firstname: data.firstname,
+    //   middlename: data.middlename,
+    //   lastname: data.lastname,
+    //   birthday: data.birthday,
+    //   gender: data.gender,
+    //   age: age,
+    //   height: data.height,
+    //   weight: data.weight,
+    //   bloodType: data.bloodtype,
+    //   bmi: bmi,
+    //   classification: 'classification',
+    //   phone: data.phonenumber,
+    // };
+
+    // setProfile(data);
     // console.log(data);
     // setLoading(true);
     // let userObj;
@@ -299,7 +353,7 @@ const ProfileSetupScreen = () => {
                   <CustomPicker
                     name="medical_field"
                     placeholder={'Select'}
-                    options={specs}
+                    options={specializations}
                     close={() => {
                       setSpecsModal(false);
                       setShowPersonalDetail(true), setAllowSetup(true);
