@@ -21,17 +21,14 @@ export const AuthProvider = ({children}) => {
         password,
       })
       .then(res => {
-        let userInfo = res.data;
-        setUserInfo(userInfo);
-        AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
+        // let userInfo = res.data;
+        // setUserInfo(userInfo);
+        // AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
         setIsLoading(false);
-        console.log('register success', new Date(), 'DATA:', userInfo);
       })
       .catch(error => {
         if (error.response) {
           console.log('Response data:', error.response.data);
-          console.log('Response status:', error.response.status);
-          console.log('Response headers:', error.response.headers);
         } else if (error.request) {
           console.log('No response received:', error.request);
         } else {

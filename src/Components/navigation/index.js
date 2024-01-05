@@ -30,7 +30,7 @@ const Navigation = () => {
           <>
             {/* <Stack.Screen name="ResetPasswordScreen" component={ResetPasswordScreen}/> */}
 
-            {!userProfile ? (
+            {Object.keys(userProfile).length !== 0 ? (
               <Stack.Screen
                 name="DashboardScreen"
                 component={DashboardScreen}

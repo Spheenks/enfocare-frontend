@@ -71,7 +71,6 @@ const ProfileSetupScreen = () => {
   const [birthDay, setBirthDay] = useState(new Date());
   const [specialization, setSpecialization] = useState('');
   const [classification, setClassification] = useState('');
-  const [profileAge, setProfileAge] = useState();
 
   // FALSE SETTER
   const [falseVal, setFalseVal] = useState(false);
@@ -111,10 +110,6 @@ const ProfileSetupScreen = () => {
     }
   }, [bmi]);
 
-  useEffect(() => {
-    setProfileAge(age);
-  }, [age]);
-
   // FUNCTIONS
 
   const togglePicker = () => {
@@ -125,22 +120,41 @@ const ProfileSetupScreen = () => {
 
   const onSetupPressed = async data => {
     try {
+      const profileData =
+        data.account_type === 'PATIENT'
+          ? {
+              accountType: data.account_type,
+              firstname: data.firstname,
+              middlename: data.middlename,
+              lastname: data.lastname,
+              birthday: data.birthday,
+              gender: data.gender,
+              age: age,
+              height: data.height,
+              weight: data.weight,
+              bloodType: data.bloodtype,
+              bmi: bmi,
+              classification: classification,
+              phone: data.phonenumber,
+              isDoctor: false,
+              biometric: false,
+            }
+          : {
+              accountType: data.account_type,
+              medicalField: data.medical_field,
+              firstname: data.firstname,
+              middlename: data.middlename,
+              lastname: data.lastname,
+              gender: data.gender,
+              birthday: data.birthday,
+              age: age,
+              phone: data.phonenumber,
+              isDoctor: true,
+              biometric: false,
+            };
+
       // Call the setProfile method from the context
-      const response = await setProfile({
-        accountType: 'PATIENT',
-        firstname: data.firstname,
-        middlename: data.middlename,
-        lastname: data.lastname,
-        birthday: data.birthday,
-        gender: data.gender,
-        age: profileAge,
-        height: data.height,
-        weight: data.weight,
-        bloodType: data.bloodtype,
-        bmi: bmi,
-        classification: classification,
-        phone: data.phonenumber,
-      });
+      const response = await setProfile(profileData);
 
       // Handle the response as needed
       console.log('Profile setup response:', response);
@@ -453,7 +467,7 @@ const ProfileSetupScreen = () => {
               {moment(new Date()).format('YYYY MM DD') !==
                 moment(birthWatcher).format('YYYY MM DD') && (
                 <View style={styles.twoComponents}>
-                  <View style={styles.firstComponentStyle}>
+                  {/* <View style={styles.firstComponentStyle}>
                     <CustomInput
                       name="age"
                       control={control}
@@ -465,9 +479,16 @@ const ProfileSetupScreen = () => {
                       editable={false}
                       selectTextOnFocus={false}
                     />
-                  </View>
+                  </View> */}
+
                   <View style={styles.secondComponentStyle}>
-                    <Text style={{fontWeight: 'bold'}}>year/s old</Text>
+                    <Text style={{fontWeight: 'bold'}}>{age ? age : ''}</Text>
+                  </View>
+
+                  <View style={styles.secondComponentStyle}>
+                    <Text style={{fontWeight: 'bold'}}>
+                      {age ? 'year/s old' : ''}
+                    </Text>
                   </View>
                 </View>
               )}
