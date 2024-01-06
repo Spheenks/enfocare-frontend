@@ -8,9 +8,10 @@ import DashboardScreen from '../../Screens/DashboardScreen';
 import ProfileSetupSceen from '../../Screens/ProfileSetupSceen';
 import {AuthContext} from '../../context/AuthContext';
 import {EnfocareApi} from '../../api/EnfocareApi';
+import ConsultListingScreen from '../../Screens/ConsultListingScreen';
+import LobbyScreen from '../../Screens/LobbyScreen';
 // import ChatScreen from "../../Screens/ChatScreen/ChatScreen";
 // import CallingScreen from "../../Screens/CallingScreen/CallingScreen";
-// import ConsultListingScreen from "../../Screens/ConsultListingScreen";
 // import IncomingCallScreen from "../../Screens/IncomingCallScreen";
 // import LobbyScreen from "../../Screens/LobbyScreen/LobbyScreen";
 // import TestScreen from "../../Screens/TestScreen";
@@ -41,6 +42,13 @@ const Navigation = () => {
                 component={ProfileSetupSceen}
               />
             )}
+
+            <Stack.Screen
+              name="ConsultListingScreen"
+              component={ConsultListingScreen}
+            />
+
+            <Stack.Screen name="LobbyScreen" component={LobbyScreen} />
           </>
         ) : (
           <>
@@ -52,8 +60,8 @@ const Navigation = () => {
         {/* <Stack.Screen name="ChatScreen" component={ChatScreen}/>
                 <Stack.Screen name="CallingScreen" component={CallingScreen}/>
                 <Stack.Screen name="IncomingCallScreen" component={IncomingCallScreen}/>
-                <Stack.Screen name="ConsultListingScreen" component={ConsultListingScreen}/>
-                <Stack.Screen name="LobbyScreen" component={LobbyScreen}/>
+                
+                
                 <Stack.Screen name="TestScreen" component={TestScreen}/>
                 <Stack.Screen name="UploadFileScreen" component={UploadFileScreen}/>
                 <Stack.Screen name="FileScreen" component={FileScreen}/>

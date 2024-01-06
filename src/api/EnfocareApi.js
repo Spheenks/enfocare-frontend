@@ -10,7 +10,6 @@ export const EnfocareApi = createContext();
 export const EnfocareApiProvider = ({children}) => {
   const {userInfo} = useContext(AuthContext);
   const [userProfile, setUserProfile] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
 
   const setProfile = async profileDataInput => {
     console.log('setProfile is called for', userInfo.email);
@@ -113,9 +112,8 @@ export const EnfocareApiProvider = ({children}) => {
         },
       );
 
-      return response;
+      return response.data;
     } catch (error) {
-      setUserProfile({});
       console.error('Error fetching user profile:', error);
     }
   };
@@ -168,7 +166,6 @@ export const EnfocareApiProvider = ({children}) => {
   // };
 
   const getAvatar = async email => {
-    setIsLoading(true);
     try {
       const response = await axios.get(
         `${ENFOCARE_URL}/profile/avatar/${userProfile.email}`,
@@ -185,13 +182,53 @@ export const EnfocareApiProvider = ({children}) => {
       const base64Image = Buffer.from(response.data, 'binary').toString(
         'base64',
       );
-      setIsLoading(false);
+
       // Use base64Image as needed, for example, setting it in state
       return `data:image/jpeg;base64, ${base64Image}`;
     } catch (error) {
       console.error('Error fetching avatar:', error);
     }
   };
+
+  const getDoctorListByField = async doctorField => {
+    try {
+      const response = await axios.get(
+        `${ENFOCARE_URL}/profile/specialization/${doctorField}`,
+        {
+          headers: {Authorization: `Bearer ${userInfo.token}`},
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user doctors:', error);
+    }
+  };
+
+  const getLobbyInformation = async email => {
+    try {
+      const response = await axios.get(`${ENFOCARE_URL}/lobby/${email}`, {
+        headers: {Authorization: `Bearer ${userInfo.token}`},
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user doctors:', error);
+    }
+  };
+
+  const getLobbyQueue = async email => {
+    try {
+      const response = await axios.get(`${ENFOCARE_URL}/queue/${email}`, {
+        headers: {Authorization: `Bearer ${userInfo.token}`},
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user getLobbyQueue:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -224,15 +261,21 @@ export const EnfocareApiProvider = ({children}) => {
     }
   }, [userInfo]);
 
+  useEffect(() => {
+    console.log('THIS IS TO NOTIFY YOU USERPROFILE HAS CHANGE');
+  }, [userProfile]);
+
   return (
     <EnfocareApi.Provider
       value={{
         getProfile,
         userProfile,
-        isLoading,
         setProfile,
         uploadAvatar,
         getAvatar,
+        getDoctorListByField,
+        getLobbyQueue,
+        getLobbyInformation,
       }}>
       {children}
     </EnfocareApi.Provider>
