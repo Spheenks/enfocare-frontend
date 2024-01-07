@@ -1,9 +1,16 @@
 import axios from 'axios';
 import React, {createContext, useContext, useState, useEffect} from 'react';
-import {ENFOCARE_URL} from '../config';
+import {
+  ENFOCARE_URL,
+  VOXIMPLANT_ACCOUNT_ID,
+  VOXIMPLANT_API_KEY,
+  VOXIMPLANT_APPLICATION_ID,
+} from '../config';
 import {AuthContext} from '../context/AuthContext';
 import encode from 'base64-js';
 import {Buffer} from 'buffer';
+import {log} from 'console';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const EnfocareApi = createContext();
 
@@ -42,7 +49,9 @@ export const EnfocareApiProvider = ({children}) => {
 
       let returnData = response.data;
 
-      console.log('isDoctor from DATA :   ', returnData.isDoctor);
+      if (response.status === 200) {
+        createVoximplantAccount(returnData);
+      }
 
       if (returnData.isDoctor === true) {
         const lobbyResponse = await saveDoctorLobby(returnData);
@@ -69,7 +78,7 @@ export const EnfocareApiProvider = ({children}) => {
         `${ENFOCARE_URL}/lobby/save`,
         {
           email: returnData.email,
-          doctor: returnData.firstname + returnData.lastname,
+          doctor: returnData.firstname + ' ' + returnData.lastname,
           maxCapacity: 8,
         },
         {
@@ -101,12 +110,12 @@ export const EnfocareApiProvider = ({children}) => {
     }
   };
 
-  const getProfile = async () => {
+  const getProfile = async toFind => {
     console.log('getProfile Called');
 
     try {
       const response = await axios.get(
-        `${ENFOCARE_URL}/profile/${userInfo.email}`,
+        `${ENFOCARE_URL}/profile/${toFind ? toFind : userInfo.email}`,
         {
           headers: {Authorization: `Bearer ${userInfo.token}`},
         },
@@ -150,25 +159,10 @@ export const EnfocareApiProvider = ({children}) => {
     }
   };
 
-  //   const getAvatar = async (email) => {
-  //   try {
-  //     const response = await axios.get(`${ENFOCARE_URL}/avatar/${email}`, {
-  //       responseType: 'arraybuffer',
-  //     });
-
-  //     const base64Image = Buffer.from(response.data, 'binary').toString('base64');
-  //     const imageUri = `data:image/jpeg;base64,${base64Image}`;
-
-  //     return imageUri;
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // };
-
   const getAvatar = async email => {
     try {
       const response = await axios.get(
-        `${ENFOCARE_URL}/profile/avatar/${userProfile.email}`,
+        `${ENFOCARE_URL}/profile/avatar/${email}`,
         {
           headers: {
             Accept: 'image/jpeg',
@@ -186,7 +180,7 @@ export const EnfocareApiProvider = ({children}) => {
       // Use base64Image as needed, for example, setting it in state
       return `data:image/jpeg;base64, ${base64Image}`;
     } catch (error) {
-      console.error('Error fetching avatar:', error);
+      // console.error('Error fetching avatar:', error);
     }
   };
 
@@ -198,8 +192,14 @@ export const EnfocareApiProvider = ({children}) => {
           headers: {Authorization: `Bearer ${userInfo.token}`},
         },
       );
+      let returnData;
 
-      return response.data;
+      if (response.status === 200) {
+        returnData = response.data;
+      } else {
+        returnData = {};
+      }
+      return returnData;
     } catch (error) {
       console.error('Error fetching user doctors:', error);
     }
@@ -218,14 +218,112 @@ export const EnfocareApiProvider = ({children}) => {
   };
 
   const getLobbyQueue = async email => {
+    console.log('getLobbyQueueCalled', email);
     try {
-      const response = await axios.get(`${ENFOCARE_URL}/queue/${email}`, {
-        headers: {Authorization: `Bearer ${userInfo.token}`},
-      });
+      const response = await axios.get(
+        `${ENFOCARE_URL}/queue/count?email=${email}`,
+        {
+          headers: {Authorization: `Bearer ${userInfo.token}`},
+        },
+      );
+
+      console.log('THIS SHIT ', response.data);
 
       return response.data;
     } catch (error) {
       console.error('Error fetching user getLobbyQueue:', error);
+    }
+  };
+
+  const saveQueueEntry = async (doctorSelected, patientEmail) => {
+    console.log('saveQueueEntry Called', patientEmail);
+
+    try {
+      const queueNumber = await getLobbyQueue(doctorSelected.email);
+
+      const currentDate = new Date();
+      const timeIn = currentDate.toISOString();
+
+      console.log('TIME! ', timeIn);
+
+      const response = await axios.post(
+        `${ENFOCARE_URL}/queue/save`,
+        {
+          doctor: doctorSelected.email,
+          patient: patientEmail,
+          queue: queueNumber,
+          timeIn: timeIn,
+        },
+        {
+          headers: {Authorization: `Bearer ${userInfo.token}`},
+        },
+      );
+
+      console.log(response.data);
+      return response;
+    } catch (error) {
+      console.error('Error saving doctor lobby:', error.response);
+
+      throw error; // Re-throw the error for other types of errors
+    }
+  };
+
+  const getPatientQueue = async doctorEmail => {
+    console.log('getPatientQueue ', 'called');
+    try {
+      const response = await axios.get(
+        `${ENFOCARE_URL}/queue/list?doctor=${doctorEmail}`,
+        {
+          headers: {Authorization: `Bearer ${userInfo.token}`},
+        },
+      );
+
+      if (response.status === 200) {
+        return response.data;
+      } else if (response.status === 404) {
+        return []; // Return an empty array for 404 status
+      } else {
+        console.error('Unexpected status code:', response.status);
+        // Throw an error for unexpected status codes
+        throw new Error(`Unexpected status code: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error fetching patient queue:', error);
+      throw error; // Rethrow the error to propagate it to the caller
+    }
+  };
+
+  const createVoximplantAccount = async profile => {
+    console.log('createVoximplantAccount called');
+    const displayName = profile.firstname + ' ' + profile.lastname;
+
+    try {
+      if (profile && profile.firstname && profile.lastname && profile.phone) {
+        // Extract numeric part from the phone number
+        const numericPhone = profile.phone.replace(/\D/g, '');
+
+        // Concatenate firstname, lastname, and numeric part of the phone number
+        const voxUsername = `${profile.firstname.toLowerCase()}${profile.lastname.toLowerCase()}${numericPhone}`;
+
+        console.log(voxUsername);
+
+        const userRawCredential = await AsyncStorage.getItem('userCredential');
+        const userCredential = JSON.parse(userRawCredential);
+
+        console.log('USER RAW', userCredential);
+
+        const response = await axios.get(
+          `https://api.voximplant.com/platform_api/AddUser/?account_id=${VOXIMPLANT_ACCOUNT_ID}&api_key=${VOXIMPLANT_API_KEY}&user_name=${voxUsername}&user_display_name=${displayName}&user_password=${userCredential.password}&application_id=${VOXIMPLANT_APPLICATION_ID}`,
+        );
+
+        // Handle the response...
+        console.log(response.data);
+      } else {
+        console.log('Invalid profile data');
+      }
+    } catch (error) {
+      // Handle errors...
+      console.error(error);
     }
   };
 
@@ -234,8 +332,8 @@ export const EnfocareApiProvider = ({children}) => {
       try {
         const response = await getProfile();
 
-        if (response.status === 200) {
-          let responseData = response.data;
+        if (response.email === userInfo.email) {
+          let responseData = response;
 
           if (responseData.isDoctor === true) {
             const lobby = await getDoctorLobby(responseData.email);
@@ -248,12 +346,11 @@ export const EnfocareApiProvider = ({children}) => {
             };
           }
 
-          console.log('BETLOG', responseData);
-
           setUserProfile(responseData);
         }
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        setUserProfile({});
+        console.error('Error fetching user profile: Line 260', error);
       }
     };
     if (userInfo) {
@@ -276,6 +373,8 @@ export const EnfocareApiProvider = ({children}) => {
         getDoctorListByField,
         getLobbyQueue,
         getLobbyInformation,
+        saveQueueEntry,
+        getPatientQueue,
       }}>
       {children}
     </EnfocareApi.Provider>

@@ -1,167 +1,121 @@
-import moment from 'moment/moment';
 import React from 'react';
 import {FlatList, Pressable, StyleSheet, Text, View} from 'react-native';
-
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import moment from 'moment/moment';
 
 export default function Queue({patients, onCallPatient, isDoctor}) {
-  const renderUser = ({item}) => {
-    const time = item.timein;
-    const datedtime = new Date(time);
-    const hours = datedtime.getUTCHours().toString();
-    const posfix = datedtime.toTimeString();
-    const prefix = datedtime.toLocaleTimeString();
-    const stringed = moment(datedtime);
+  const renderUser = ({item, index}) => {
+    const time = item.timeIn;
+    const prefix = moment(time).format('LT');
 
-    console.log(stringed.isValid());
-
-    var minutes = '';
-
-    if (datedtime.getUTCMinutes().toString() < 10) {
-      minutes = '0' + datedtime.getUTCMinutes().toString();
-    } else {
-      minutes = datedtime.getUTCMinutes().toString();
-    }
+    const backgroundColor = index % 2 === 0 ? '#E6F7FF' : '#F1FFE5'; // Light blue for even rows, light green for odd rows
 
     return (
-      <>
-        <View style={styles.listContainer}>
-          <View style={styles.nameContainer}>
-            <Text numberOfLines={1} style={styles.fullnameText}>
-              {item.firstname} {item.lastname}
-            </Text>
-          </View>
-
-          {isDoctor ? (
-            <>
-              <View style={styles.timeContainer}>
-                <Text style={styles.timeText}>
-                  {stringed === true ? prefix : 'IN'}
-                </Text>
-              </View>
-
-              <View style={styles.iConts}>
-                <Pressable onPress={() => onCallPatient(item)}>
-                  {/* <Image style={styles.avatar} source={{ uri: item.avatar }} /> */}
-                  <MaterialCommunityIcons
-                    name="account-arrow-right"
-                    size={40}
-                    color={'green'}
-                  />
-                </Pressable>
-              </View>
-            </>
-          ) : (
-            <View style={styles.timeContainer}>
-              {/* <Text>{time}</Text> */}
-              {/* <Text>{hours + ":" + minutes}</Text> */}
-              <Text style={styles.timeText}>{prefix}</Text>
-            </View>
-          )}
+      <View style={[styles.listContainer, {backgroundColor}]}>
+        <View style={styles.nameContainer}>
+          <Text numberOfLines={1} style={styles.fullnameText}>
+            {item.firstname} {item.lastname}
+          </Text>
         </View>
-      </>
+        {isDoctor && (
+          <View style={styles.timeIconContainer}>
+            <Text style={styles.timeText}>{prefix ? prefix : 'IN'}</Text>
+            <Pressable
+              style={styles.iconContainer}
+              onPress={() => onCallPatient(item)}>
+              <MaterialCommunityIcons
+                name="account-arrow-right"
+                size={30}
+                color={'green'}
+              />
+            </Pressable>
+          </View>
+        )}
+      </View>
     );
   };
+
   return (
-    <>
+    <View style={styles.container}>
       <View style={styles.headerContainer}>
         <View style={styles.listHeaderContainer}>
-          <Text style={styles.userLabel}>Name</Text>
+          <Text style={styles.headerText}>Name</Text>
         </View>
-
-        <View style={styles.listHeaderContainer}>
-          <Text style={styles.userLabel}>Time in</Text>
-        </View>
+        {isDoctor && (
+          <View style={styles.listHeaderContainer}>
+            <Text style={styles.headerText}>Time In</Text>
+          </View>
+        )}
       </View>
-
       <FlatList
-        style={styles.contactCont}
         data={patients}
         renderItem={renderUser}
-        keyExtractor={item => item.email.toString()}
+        keyExtractor={(item, index) => index.toString()}
       />
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  listContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-    height: 60,
+  container: {
+    flex: 1,
+    marginVertical: 10,
+    backgroundColor: '#F7F7F7',
   },
   headerContainer: {
     flexDirection: 'row',
-    alignContent: 'space-around',
-    alignItems: 'center',
     justifyContent: 'space-around',
-    height: 35,
-    marginVertical: 5,
+    height: 40,
+    backgroundColor: '#F7F7F7',
+    borderBottomWidth: 1,
+    borderBottomColor: '#CCCCCC',
   },
   listHeaderContainer: {
-    width: '50%',
-    height: '100%',
+    flex: 1,
     justifyContent: 'center',
     margin: 5,
+    borderRightWidth: 1,
+    borderRightColor: '#CCCCCC',
   },
-
-  iConts: {
-    width: 60,
+  headerText: {
+    color: 'black',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  listContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 80,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    overflow: 'hidden', // Clip the content inside the LinearGradient
   },
-  timeContainer: {
-    height: '100%',
-    width: 110,
+  nameContainer: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center', // Center the content horizontally
+  },
+  timeIconContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     alignItems: 'center',
   },
-
-  nameContainer: {
-    height: '100%',
-    width: '50%',
+  iconContainer: {
+    width: 50,
+    height: 50,
     justifyContent: 'center',
-  },
-  contactCont: {
-    width: '100%',
+    alignItems: 'center',
   },
   fullnameText: {
     color: 'black',
     fontSize: 18,
     fontWeight: 'bold',
-    marginHorizontal: 30,
   },
   timeText: {
     color: 'black',
     fontSize: 15,
-  },
-  userLabel: {
-    color: 'black',
-    fontSize: 15,
-    width: '100%',
-    fontWeight: '200',
-    textAlign: 'center',
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    marginRight: 10,
-  },
-  row: {
-    flexDirection: 'row',
-    padding: 10,
-    alignItems: 'center',
-    borderBottomColor: '#cacaca',
-    borderBottomWidth: 1,
-  },
-  addUser: {
-    flexDirection: 'row',
-    padding: 10,
-  },
-  input: {
-    backgroundColor: '#cacaca',
-    flex: 1,
-    marginRight: 10,
-    padding: 10,
   },
 });

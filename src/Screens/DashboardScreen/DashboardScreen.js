@@ -31,11 +31,7 @@ const DashboardScreen = () => {
   };
 
   const onDoctorQueue = () => {
-    navigation.navigate('LobbyScreen', {
-      doctorId: myData.id,
-      lobbyId: myData.lobby,
-      accType: myData.accountType,
-    });
+    navigation.navigate('LobbyScreen');
   };
 
   const handleImageUpload = async () => {
@@ -139,7 +135,7 @@ const DashboardScreen = () => {
         ) : (
           <DoctorMenu
             onLogout={onLogoutPressed}
-            // onDoctorQueue={onDoctorQueue}
+            onDoctorQueue={onDoctorQueue}
             // onUpload={onUploadFileForUser}
           />
         )}

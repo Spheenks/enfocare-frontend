@@ -7,18 +7,13 @@ import Patients from '../../Components/Patients';
 import {AuthContext} from '../../context/AuthContext';
 
 const ConsultListingScreen = () => {
-  const {userProfile, getDoctorListByField, getLobbyQueue} =
+  const {userProfile, getDoctorListByField, getLobbyQueue, saveQueueEntry} =
     useContext(EnfocareApi);
-  const {userInfo} = useContext(AuthContext);
-  const [users, setUsers] = useState([]);
-  const [myData, setMyData] = useState(null);
-  const [user, setUser] = useState();
+
   const navigation = useNavigation();
   const [selectedSpecs, setSelectedSpecs] = useState('Department ▼');
   const [specsModalShow, setSpecsModalShow] = useState(false);
-  const rawSpecs = [];
   const [specs, setSpecs] = useState([]);
-  const [myId, setMyId] = useState('');
 
   const [doctors, setDoctors] = useState([]);
 
@@ -88,8 +83,6 @@ const ConsultListingScreen = () => {
         doctors = [doctors];
       }
 
-      console.log('setDoctorList called', doctors);
-
       const doctorLobbies = await Promise.all(
         doctors.map(async doctor => {
           const queueCount = await getLobbyQueue(doctor.email);
@@ -102,15 +95,19 @@ const ConsultListingScreen = () => {
         }),
       );
 
-      console.log('doctorLobbies', doctorLobbies);
-
-      setDoctors(doctorLobbies);
+      if (doctorLobbies) {
+        setDoctors(doctorLobbies);
+      } else {
+        setDoctors([]);
+      }
     } catch (error) {
+      setDoctors([]);
       console.error('Error setting doctor list:', error);
     }
   };
 
   const consultDoctor = async doctorSelected => {
+    saveQueueEntry(doctorSelected, userProfile.email);
     navigation.navigate('LobbyScreen', {
       doctorEmail: doctorSelected.email,
     });

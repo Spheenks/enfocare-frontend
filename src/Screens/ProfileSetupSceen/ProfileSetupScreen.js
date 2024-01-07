@@ -207,12 +207,6 @@ const ProfileSetupScreen = () => {
 
       // Call the setProfile method from the context
       const response = await setProfile(profileData);
-
-      // Handle the response as needed
-      console.log('Profile setup response:', response);
-
-      // Navigate to the dashboard or another screen upon successful setup
-      // navigation.navigate("DashboardScreen");
     } catch (error) {
       console.error('Profile setup error:', error);
     }

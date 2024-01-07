@@ -57,8 +57,13 @@ export const AuthProvider = ({children}) => {
       .then(res => {
         let userInfo = res.data;
 
+        let credential = {email: email, password: password};
+
+        AsyncStorage.setItem('userCredential', JSON.stringify(credential));
+
         setUserInfo(userInfo);
         AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
+
         setIsLoading(false);
 
         console.log(
@@ -95,6 +100,8 @@ export const AuthProvider = ({children}) => {
     } finally {
       // Clear AsyncStorage and update state
       await AsyncStorage.removeItem('userInfo');
+      await AsyncStorage.removeItem('userCredential');
+
       setUserInfo({});
     }
   };

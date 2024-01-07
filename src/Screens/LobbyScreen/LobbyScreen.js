@@ -1,24 +1,20 @@
-// @refresh reset
 import React, {useContext, useEffect, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import 'firebase/database';
-import {ref, push} from 'firebase/database';
+
 import {useNavigation, useRoute} from '@react-navigation/native';
 import Queue from '../../Components/Queue';
 import {EnfocareApi} from '../../api/EnfocareApi';
 
 const LobbyScreen = () => {
-  const {userProfile, getProfile} = useContext(EnfocareApi);
-  const [users, setUsers] = useState([]);
-  const [myData, setMyData] = useState(null);
+  const {userProfile, getProfile, getPatientQueue} = useContext(EnfocareApi);
+
   const [patients, setPatients] = useState();
   const navigation = useNavigation();
   const [selectedSpecs, setSelectedSpecs] = useState('Department ▼');
   const [specsModalShow, setSpecsModalShow] = useState(false);
-  const [lobbyId, setLobbyId] = useState('');
-  const [doctorId, setDoctorId] = useState('');
+
   const route = useRoute();
-  const [accType, setAccType] = useState('');
+
   const [roomDoctor, setRoomDoctor] = useState('');
 
   useEffect(() => {
@@ -32,8 +28,36 @@ const LobbyScreen = () => {
   const getQueue = async doctorEmail => {
     let doctor = await getProfile(doctorEmail);
 
-    console.log('WAKKKKK', doctor.lastname);
-    setPatients([]);
+    let patients = await getPatientQueue(
+      userProfile.isDoctor ? userProfile.email : doctorEmail,
+    );
+
+    let patientList = await Promise.all(
+      patients.map(async patient => {
+        const profile = await getProfile(patient.patient);
+
+        console.log(profile);
+
+        return {
+          ...profile,
+          timeIn: patient.timeIn,
+        };
+      }),
+    );
+
+    // const doctorLobbies = await Promise.all(
+    //   doctors.map(async doctor => {
+    //     const queueCount = await getLobbyQueue(doctor.email);
+    //     return {
+    //       ...doctor,
+    //       lobby: {
+    //         onQueue: queueCount,
+    //       },
+    //     };
+    //   }),
+    // );
+
+    setPatients(patientList);
     setRoomDoctor(doctor);
   };
 
@@ -57,7 +81,7 @@ const LobbyScreen = () => {
         <View style={styles.screenTitle}>
           <Text style={styles.titleText}>
             {userProfile.isDoctor
-              ? 'My Lobby'
+              ? 'PATIENT LIST'
               : 'Dr.' + roomDoctor.firstname + ' ' + roomDoctor.lastname}
           </Text>
         </View>
@@ -69,7 +93,7 @@ const LobbyScreen = () => {
           <Queue
             patients={patients}
             onCallPatient={onCallUser}
-            accountType={userProfile.isDoctor}
+            isDoctor={userProfile.isDoctor}
           />
         </View>
       </View>
@@ -81,33 +105,36 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F7F7F7', // Set a light background color
   },
   listCont: {
-    height: '70%',
+    flex: 1,
     width: '100%',
   },
   screenTitle: {
-    height: '20%',
+    height: 60, // Reduced height
     width: '100%',
-    borderBottomWidth: 2,
+    borderBottomWidth: 1, // Reduced border
     borderBottomColor: '#D3D3D3',
     justifyContent: 'center',
     alignItems: 'center',
   },
   titleText: {
-    fontSize: 25,
+    fontSize: 20, // Reduced font size
     fontWeight: 'bold',
     textAlign: 'center',
+    color: '#333', // Set text color
   },
   queueText: {
-    fontSize: 25,
+    fontSize: 20, // Reduced font size
     fontWeight: 'bold',
     textAlign: 'center',
+    color: '#333', // Set text color
   },
   queueTitle: {
-    height: '10%',
+    height: 30, // Reduced height
     width: '100%',
-    padding: 10,
+    padding: 5, // Reduced padding
   },
 });
 export default LobbyScreen;

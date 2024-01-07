@@ -12,10 +12,13 @@ export default function Doctors({doctors, onConsultDoctor}) {
         </View>
 
         <View style={styles.iConts}>
-          {item.lobby && item.lobby.onQueue === 8 ? (
-            <Text>{item.lobby.onQueue}</Text>
+          {item.lobby &&
+          (item.lobby.onQueue === 8 || item.lobby.onQueue >= 8) ? (
+            <Text style={{color: 'red'}}>MAX</Text>
           ) : (
             <Pressable onPress={() => onConsultDoctor(item)}>
+              <Text style={{color: 'blue'}}>{item.lobby.onQueue} / 8</Text>
+
               <Text>CONSULT</Text>
             </Pressable>
           )}
