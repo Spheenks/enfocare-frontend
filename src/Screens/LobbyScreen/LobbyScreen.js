@@ -61,18 +61,17 @@ const LobbyScreen = () => {
     setRoomDoctor(doctor);
   };
 
-  const onCallUser = async patientSelected => {
-    // database().ref(`lobbies/${myData.lobby}/onQueue/${userSelected.id}`).update({
-    //     timein: "IN"
-    // })
-    // database().ref(`users/${myData.id}/connections/${userSelected.id}/chatroomId`).once('value').then((res) => {
-    //     navigation.navigate('CallingScreen', {
-    //         receiverData: userSelected,
-    //         callerData: myData,
-    //         t: 't',
-    //         roomRef: res.val()
-    //     });
-    // });
+  const onCallPatient = async patientSelected => {
+    console.log('onCallPatient is Called with data : ', patientSelected);
+    try {
+      navigation.navigate('CallingScreen', {
+        receiverData: patientSelected,
+        callerData: userProfile,
+        t: 't',
+      });
+    } catch (error) {
+      console.error('Error calling patient:', error);
+    }
   };
 
   return (
@@ -92,7 +91,7 @@ const LobbyScreen = () => {
         <View style={styles.listCont}>
           <Queue
             patients={patients}
-            onCallPatient={onCallUser}
+            onCallPatient={onCallPatient}
             isDoctor={userProfile.isDoctor}
           />
         </View>

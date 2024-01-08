@@ -19,11 +19,6 @@ const NUM_REGEX = /\d+/g;
 const ProfileSetupScreen = () => {
   const {setProfile} = useContext(EnfocareApi);
   const {userInfo} = useContext(AuthContext);
-  // ASYNC STORAGE CONTROL
-  const [storedAsyncedEmail, setStoredAsyncedEmail] = useState('');
-  const [storedAsyncedPassword, setStoredAsyncedPassword] = useState('');
-  const [isBirthDatePickerVisible, setIsBirthDatePickerVisible] =
-    useState(false);
 
   // LOADING CONTROL
   const [loading, setLoading] = useState(false);
@@ -206,7 +201,7 @@ const ProfileSetupScreen = () => {
             };
 
       // Call the setProfile method from the context
-      const response = await setProfile(profileData);
+      await setProfile(profileData);
     } catch (error) {
       console.error('Profile setup error:', error);
     }

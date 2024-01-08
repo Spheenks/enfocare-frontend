@@ -139,9 +139,8 @@ export const AuthProvider = ({children}) => {
   };
 
   const isLoggedIn = async () => {
-    console.log();
-    console.log('FUNCTION isLoggedIn : ');
-    console.log();
+    console.log('isLoggedIn CALLED ');
+
     try {
       // Check if userInfo exists and the token is valid
       if (userInfo && (await checkTokenValidity())) {

@@ -1,5 +1,12 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {View, StyleSheet, TouchableOpacity, Text, Image} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  Image,
+  Alert,
+} from 'react-native';
 import {AuthContext} from '../../context/AuthContext';
 import CustomButton from '../../Components/CustomButton';
 import Spinner from 'react-native-loading-spinner-overlay';
@@ -9,24 +16,32 @@ import DoctorMenu from '../MenuScreen/DoctorMenu';
 import {EnfocareApi} from '../../api/EnfocareApi';
 import PickerModalSettings from '../../Components/PickerModalSettings';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
+import {launchImageLibrary} from 'react-native-image-picker';
 import Entypo from 'react-native-vector-icons/Entypo';
+import {Voximplant} from 'react-native-voximplant';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {APP_NAME, ACC_NAME} from '../../config'; // Replace with actual path
 
 const DashboardScreen = () => {
+  const voximplant = Voximplant.getInstance();
   const navigation = useNavigation();
-  const [loading, setLoading] = useState(false);
-
   const {userProfile, uploadAvatar, getAvatar} = useContext(EnfocareApi);
 
   const {logout} = useContext(AuthContext);
 
   const [previewImageUri, setPreviewImageUri] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const onLogoutPressed = () => {
-    logout();
+  const onLogoutPressed = async () => {
+    try {
+      await voximplant.disconnect();
+      logout();
+    } catch (error) {
+      console.error('Error during logouts:', error);
+    }
   };
 
-  const onConsultPressed = async () => {
+  const onConsultPressed = () => {
     navigation.navigate('ConsultListingScreen');
   };
 
@@ -38,12 +53,8 @@ const DashboardScreen = () => {
     try {
       const selectedImageUri = await selectImage();
 
-      console.log(selectedImageUri);
-
       if (selectedImageUri) {
         setPreviewImageUri(selectedImageUri);
-
-        // Upload the selected image
         await uploadAvatar(selectedImageUri);
         console.log('File uploaded successfully');
       }
@@ -52,11 +63,9 @@ const DashboardScreen = () => {
     }
   };
 
-  const selectImage = async () => {
+  const selectImage = () => {
     return new Promise((resolve, reject) => {
-      const options = {
-        mediaType: 'photo',
-      };
+      const options = {mediaType: 'photo'};
 
       launchImageLibrary(options, response => {
         if (response.didCancel) {
@@ -64,7 +73,6 @@ const DashboardScreen = () => {
         } else if (response.error) {
           reject(new Error(response.error));
         } else if (response.assets && response.assets.length > 0) {
-          // Access the first asset in the array
           const selectedImageUri = response.assets[0].uri;
           resolve(selectedImageUri);
         } else {
@@ -78,31 +86,104 @@ const DashboardScreen = () => {
     const fetchAvatar = async () => {
       try {
         const avatar = await getAvatar(userProfile.email);
-
         setPreviewImageUri(avatar);
       } catch (error) {
         console.error('Error fetching avatar:', error);
       }
     };
 
-    if (userProfile.email) {
-      fetchAvatar();
-    }
+    const fetchData = async () => {
+      try {
+        const userRawCredential = await AsyncStorage.getItem('userCredential');
+        const userCredential = JSON.parse(userRawCredential);
+
+        if (userProfile.email) {
+          const numericPhone = userProfile.phone.replace(/\D/g, '');
+          const voxUsername = `${userProfile.firstname.toLowerCase()}${userProfile.lastname.toLowerCase()}${numericPhone}`;
+
+          await loginVox(voxUsername, userCredential.password);
+          await fetchAvatar();
+        }
+      } catch (error) {
+        console.error('Error fetching user credential or avatar:', error);
+      }
+    };
+
+    fetchData();
   }, [userProfile, getAvatar]);
+
+  useEffect(() => {
+    voximplant.on(
+      Voximplant.ClientEvents.IncomingCall,
+      incomingCallEvent => {
+        navigation.navigate('IncomingCallScreen', {
+          call: incomingCallEvent.call,
+        });
+        return () => {
+          voximplant.off(Voximplant.ClientEvents.IncomingCall);
+        };
+      },
+      [],
+    );
+  }, []);
+
+  /* VOXIMPLANT RELATED */
+
+  async function loginVox(userid, password) {
+    const fqUsername = `${userid}@${APP_NAME}.${ACC_NAME}.voximplant.com`;
+
+    console.log('SHEESH', fqUsername);
+    try {
+      let clientState = await voximplant.getClientState();
+      if (clientState === Voximplant.ClientState.DISCONNECTED) {
+        await voximplant.connect();
+        await voximplant.login(fqUsername, password);
+      }
+      if (clientState === Voximplant.ClientState.CONNECTED) {
+        await voximplant.login(fqUsername, password);
+      }
+    } catch (e) {
+      let message;
+      switch (e.name) {
+        case Voximplant.ClientEvents.ConnectionFailed:
+          message = 'Connection error, check your internet connection';
+          break;
+        case Voximplant.ClientEvents.AuthResult:
+          message = convertCodeMessage(e.code);
+          break;
+        default:
+          message = 'Unknown error. Try again';
+      }
+      console.log('Dashboard Voximplant login error:', e);
+      showLoginError(message);
+    }
+  }
+
+  function convertCodeMessage(code) {
+    switch (code) {
+      case 401:
+        return 'Invalid password';
+      case 404:
+        return 'Invalid user';
+      case 491:
+        return 'Invalid state';
+      default:
+        return 'Try again later';
+    }
+  }
+
+  function showLoginError(message) {
+    Alert.alert('Login error', message, [
+      {
+        text: 'OK',
+      },
+    ]);
+  }
 
   return (
     <View style={styles.root}>
-      {/* <Spinner
-        visible={loading}
-        textContent={'Loading...'}
-        textStyle={styles.spinnerTextStyle}
-      /> */}
-
       <View style={styles.settingsContainer}>
-        <TouchableOpacity
-          style={styles.settingsIconContainer}
-          // onPress={toggleSettings}
-        >
+        <TouchableOpacity style={styles.settingsIconContainer}>
           <FontAwesome name="gear" size={40} color="#74DA74" />
         </TouchableOpacity>
       </View>
@@ -115,9 +196,7 @@ const DashboardScreen = () => {
               style={styles.previewImage}
             />
           ) : (
-            <>
-              <Entypo name="emoji-flirt" size={80} color="#74DA74" />
-            </>
+            <Entypo name="emoji-flirt" size={80} color="#74DA74" />
           )}
         </TouchableOpacity>
         <Text style={styles.nameCont}>
@@ -130,27 +209,14 @@ const DashboardScreen = () => {
           <PatientMenu
             onLogout={onLogoutPressed}
             onFindDoctor={onConsultPressed}
-            // viewFiles={viewFiles}
           />
         ) : (
           <DoctorMenu
             onLogout={onLogoutPressed}
             onDoctorQueue={onDoctorQueue}
-            // onUpload={onUploadFileForUser}
           />
         )}
       </View>
-
-      {/* <PickerModalSettings
-        options={
-          userIsBioEnabled === true ? biometricOption2 : biometricOption1
-        }
-        onSelect={value => {
-          setIsSettingModalVisible(false), settingAction(value);
-        }}
-        isVisible={isSettingModalVisible}
-        onClose={() => setIsSettingModalVisible(false)}
-      /> */}
     </View>
   );
 };
@@ -181,8 +247,8 @@ const styles = StyleSheet.create({
     height: 180,
     width: 180,
     borderRadius: 100,
-    justifyContent: 'center', // Center the content vertically
-    alignItems: 'center', // Center the content horizontally
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   previewImage: {
     height: '100%',
@@ -190,7 +256,6 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     backgroundColor: 'red',
   },
-
   root: {
     flex: 1,
     justifyContent: 'center',
