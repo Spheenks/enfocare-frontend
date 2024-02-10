@@ -20,7 +20,7 @@ import {launchImageLibrary} from 'react-native-image-picker';
 import Entypo from 'react-native-vector-icons/Entypo';
 import {Voximplant} from 'react-native-voximplant';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {APP_NAME, ACC_NAME} from '../../config'; // Replace with actual path
+import {APP_NAME, ACC_NAME} from '../../config';
 
 const DashboardScreen = () => {
   const voximplant = Voximplant.getInstance();
@@ -110,7 +110,7 @@ const DashboardScreen = () => {
     };
 
     fetchData();
-  }, [userProfile, getAvatar]);
+  }, [userProfile]);
 
   useEffect(() => {
     voximplant.on(
@@ -222,9 +222,17 @@ const DashboardScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F7F7F7',
+  },
   nameCont: {
     fontWeight: 'bold',
-    fontSize: 30,
+    fontSize: 24,
+    marginTop: 10,
+    color: '#333333',
   },
   settingsContainer: {
     position: 'absolute',
@@ -240,37 +248,34 @@ const styles = StyleSheet.create({
     right: 30,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 25,
+    elevation: 5,
   },
   avatarCont: {
-    borderWidth: 1,
-    borderColor: 'black',
-    height: 180,
-    width: 180,
-    borderRadius: 100,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    height: 120,
+    width: 120,
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    elevation: 5,
   },
   previewImage: {
     height: '100%',
     width: '100%',
-    borderRadius: 100,
-    backgroundColor: 'red',
-  },
-  root: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 60,
   },
   avatarAndName: {
-    height: 250,
+    height: 200,
     width: '80%',
     borderBottomColor: '#D3D3D3',
     borderBottomWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  head: {
-    color: 'black',
   },
 });
 

@@ -10,8 +10,6 @@ const LobbyScreen = () => {
 
   const [patients, setPatients] = useState();
   const navigation = useNavigation();
-  const [selectedSpecs, setSelectedSpecs] = useState('Department ▼');
-  const [specsModalShow, setSpecsModalShow] = useState(false);
 
   const route = useRoute();
 
@@ -36,8 +34,6 @@ const LobbyScreen = () => {
       patients.map(async patient => {
         const profile = await getProfile(patient.patient);
 
-        console.log(profile);
-
         return {
           ...profile,
           timeIn: patient.timeIn,
@@ -45,29 +41,15 @@ const LobbyScreen = () => {
       }),
     );
 
-    // const doctorLobbies = await Promise.all(
-    //   doctors.map(async doctor => {
-    //     const queueCount = await getLobbyQueue(doctor.email);
-    //     return {
-    //       ...doctor,
-    //       lobby: {
-    //         onQueue: queueCount,
-    //       },
-    //     };
-    //   }),
-    // );
-
     setPatients(patientList);
     setRoomDoctor(doctor);
   };
 
   const onCallPatient = async patientSelected => {
-    console.log('onCallPatient is Called with data : ', patientSelected);
     try {
       navigation.navigate('CallingScreen', {
         receiverData: patientSelected,
         callerData: userProfile,
-        t: 't',
       });
     } catch (error) {
       console.error('Error calling patient:', error);

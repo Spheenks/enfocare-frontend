@@ -12,6 +12,7 @@ import ConsultListingScreen from '../../Screens/ConsultListingScreen';
 import LobbyScreen from '../../Screens/LobbyScreen';
 import CallingScreen from '../../Screens/CallingScreen';
 import IncomingCallScreen from '../../Screens/IncomingCallScreen';
+import Spinner from 'react-native-loading-spinner-overlay';
 // import ChatScreen from "../../Screens/ChatScreen/ChatScreen";
 // import LobbyScreen from "../../Screens/LobbyScreen/LobbyScreen";
 // import TestScreen from "../../Screens/TestScreen";
@@ -22,10 +23,11 @@ import IncomingCallScreen from '../../Screens/IncomingCallScreen';
 const Stack = createNativeStackNavigator();
 const Navigation = () => {
   const {userInfo} = useContext(AuthContext);
-  const {userProfile} = useContext(EnfocareApi);
+  const {userProfile, isLoading} = useContext(EnfocareApi);
 
   return (
     <NavigationContainer>
+      <Spinner visible={isLoading} textContent={'Loading...'} />
       <Stack.Navigator screenOptions={{headerShown: false}}>
         {userInfo.token ? (
           <>

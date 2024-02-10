@@ -17,37 +17,17 @@ import {Voximplant} from 'react-native-voximplant';
 import {EnfocareApi} from '../../api/EnfocareApi';
 
 const IncomingCallScreen = () => {
-  const {userProfile, getProfile} = useContext(EnfocareApi);
+  const {userProfile, getProfile, getProfileByPhone} = useContext(EnfocareApi);
   const [callerDN, setCallerDN] = useState([]);
   const [callerId, setCallerId] = useState('');
   const route = useRoute();
   const navigation = useNavigation();
   //   const [roomref, setRoomRef] = useState('');
   const {call} = route.params;
-  const [myData, setMyData] = useState([]);
 
   useEffect(() => {
-    // const onAuthStateChangedUnsubscribe =
-    //     auth().onAuthStateChanged(async (user) => {
-    //         if (user) {
-
-    //             database().ref(`users/${user.uid}`).once('value', snapshot => {
-    //                 setMyData(snapshot.val());
-    //             }).then((res) => {
-    //                 database().ref(`users/${res.val().id}/connections/${call.getEndpoints()[0].userName}/chatroomId`).once('value', snapshot => {
-    //                     setRoomRef(snapshot.val());
-    //                 })
-    //             })
-    //             onAuthStateChangedUnsubscribe();
-    //         }
-    //     });
-
     setCallerDN(call.getEndpoints()[0].displayName);
     setCallerId(call.getEndpoints()[0].userName);
-
-    // database().ref(`users/${call.getEndpoints()[0].userName}`).once('value', snapshot => {
-    //     setCaller(snapshot.val());
-    // });
 
     call.on(Voximplant.CallEvents.Disconnected, callEvent => {
       navigation.navigate('DashboardScreen');
@@ -63,10 +43,10 @@ const IncomingCallScreen = () => {
 
   const onAccept = async () => {
     try {
-      // PROGRESS
       const callerVoxUsername = callerId.split('@')[0];
       const callerPhone = '+' + callerVoxUsername.match(/\d+/)[0];
-      const doctorProfile = await getProfile(callerId);
+      const doctorProfile = await getProfileByPhone(callerPhone);
+
       navigation.navigate('CallingScreen', {
         call,
         isIncomingCall: true,

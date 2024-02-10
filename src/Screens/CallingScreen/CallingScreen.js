@@ -8,13 +8,19 @@ import {
   Alert,
   Platform,
   useWindowDimensions,
+  PanResponder,
+  Animated,
 } from 'react-native';
+import Draggable from 'react-native-draggable';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import CallActionBox from '../../Components/CallActionBox';
 import {Voximplant} from 'react-native-voximplant';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useRef} from 'react';
 import ChatModal from '../../Components/ChatModal';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
+import {EnfocareApi} from '../../api/EnfocareApi';
 
 const permissions = [
   PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
@@ -22,6 +28,7 @@ const permissions = [
 ];
 
 const CallingScreen = () => {
+  const {userProfile, saveConsultation} = useContext(EnfocareApi);
   //SCREEN HEIGHT
 
   const {height} = useWindowDimensions();
@@ -55,15 +62,11 @@ const CallingScreen = () => {
     call: incomingCall,
     receiverData,
     callerData,
-    t,
     isIncomingCall,
   } = route?.params;
   const voximplant = Voximplant.getInstance();
   const call = useRef(incomingCall);
   const endpoint = useRef(null);
-
-  // const [myData, setMyData] = useState([]);
-  const [consultationKey, setConsultationKey] = useState('');
 
   const backToChat = () => {
     navigation.navigate('DashboardScreen');
@@ -73,22 +76,6 @@ const CallingScreen = () => {
     const devices =
       await Voximplant.Hardware.AudioDeviceManager.getInstance().getAudioDevices();
     setAvailableDevices(devices);
-
-    // if(devices.includes('WiredHeadset')){
-    //     Voximplant.Hardware.AudioDeviceManager.getInstance().selectAudioDevice("WiredHeadset");
-    // }else{
-    //     Voximplant.Hardware.AudioDeviceManager.getInstance().selectAudioDevice("Speaker");
-    // }
-
-    console.log('DSDSDS', devices.includes('WiredHeadset'));
-
-    // devices.map(data => {
-    //     if (data === "WiredHeadset") {
-    //
-    //     } else {
-    //
-    //     }
-    // })
   };
 
   //CALL FUNCTIONALITIES
@@ -160,10 +147,7 @@ const CallingScreen = () => {
     };
     const makeCall = async () => {
       const numericPhone = receiverData.phone.replace(/\D/g, '');
-
-      // Concatenate firstname, lastname, and numeric part of the phone number
       const voxReceiver = `${receiverData.firstname.toLowerCase()}${receiverData.lastname.toLowerCase()}${numericPhone}`;
-
       call.current = await voximplant.call(voxReceiver, callSettings);
       subscribeToCallEvents();
     };
@@ -173,6 +157,8 @@ const CallingScreen = () => {
       subscribeToEndpointEvent();
       call.current.answer(callSettings);
     };
+
+    const goBack = () => {};
 
     //CALL EVENTS
     const subscribeToCallEvents = () => {
@@ -186,43 +172,48 @@ const CallingScreen = () => {
         setStatusCall('Connected');
       });
       call.current.on(Voximplant.CallEvents.Disconnected, callEvent => {
-        if (t === 't') {
-          console.log('TANGINA MO CALL ENDED');
-          navigation.navigate('LobbyScreen');
-          // save consultation record
+        if (userProfile.isDoctor) {
+          const currentDate = new Date();
+          const consultationInfo = {
+            doctor: userProfile.email, // Assuming this is the correct identifier for the doctor
+            patient: receiverData.email, // Assuming this is the correct identifier for the patient
+            date: currentDate.toISOString(), // ISO string format for date
+            diagnosis: '', // Initialize as empty or null based on your needs
+            treatment: '',
+            ailment: '',
+            symptoms: '',
+          };
+
+          saveConsultation(consultationInfo)
+            .then(() => navigation.navigate('LobbyScreen')) // Navigate on success
+            .catch(error => console.log(error)); // Handle error without stopping the flow
         }
       });
-
       call.current.on(
         Voximplant.CallEvents.LocalVideoStreamAdded,
         callEvent => {
           setLocalVideoStreamId(callEvent.videoStream.id);
         },
       );
-      call.current.on(
-        Voximplant.CallEvents.LocalVideoStreamRemoved,
-        callEvent => {
-          setLocalVideoStreamId('');
-        },
-      );
       call.current.on(Voximplant.CallEvents.EndpointAdded, callEvent => {
         endpoint.current = callEvent.endpoint;
         subscribeToEndpointEvent();
       });
+
+      //  call.current.on(
+      //    Voximplant.CallEvents.LocalVideoStreamRemoved,
+      //    callEvent => {
+      //      setLocalVideoStreamId('');
+      //    },
+      //  );
     };
+
     //ENDPOINT EVENTS
     const subscribeToEndpointEvent = async () => {
       endpoint.current.on(
         Voximplant.EndpointEvents.RemoteVideoStreamAdded,
         endpointEvent => {
           setRemoteVideoStreamId(endpointEvent.videoStream.id);
-        },
-      );
-
-      endpoint.current.on(
-        Voximplant.EndpointEvents.RemoteVideoStreamRemoved,
-        endpointEvent => {
-          setRemoteVideoStreamId('');
         },
       );
     };
@@ -252,50 +243,85 @@ const CallingScreen = () => {
 
   //UI
   return (
-    <View style={styles.root}>
-      <ChatModal
-        // roomRef={}
-        roomRef={route.params.roomRef}
-        myData={route.params.receiver}
-        otherUser={
-          route.params.caller ? route.params.caller : route.params.receiver
-        }
-        isMessageEnabled={isMessageOn}
-        onClose={() => setIsMessageOn(!isMessageOn)}
-      />
-      <View style={styles.nameAndButtonCont}>
-        {statusCall === 'Connected' && (
-          <>
-            <View style={[styles.nameAndStatus, {height: height * 0.2}]}>
-              <Text style={styles.nameCallConnected}>
-                {callerData?.firstname
-                  ? callerData?.firstname
-                  : receiverData?.firstname}
-              </Text>
-              <Text style={styles.statusCallConnected}>{statusCall}</Text>
-            </View>
-          </>
-        )}
-      </View>
-      <View style={styles.cameraPreview}>
-        {statusCall !== 'Connected' && (
-          <>
-            <Text style={styles.nameCall}>{receiverData?.firstname}</Text>
-            <Text style={styles.statusCall}>{statusCall}</Text>
-          </>
-        )}
-      </View>
+    // <View style={styles.root}>
+    //   {/* <ChatModal
+    //     roomRef={route.params.roomRef}
+    //     myData={route.params.receiver}
+    //     otherUser={
+    //       route.params.caller ? route.params.caller : route.params.receiver
+    //     }
+    //     isMessageEnabled={isMessageOn}
+    //     onClose={() => setIsMessageOn(!isMessageOn)}
+    //   />
+    //   <View style={styles.nameAndButtonCont}>
+    //     {statusCall === 'Connected' && (
+    //       <View style={styles.nameAndStatus}>
+    //         <Text style={styles.nameCallConnected}>
+    //           {userProfile?.isDoctor
+    //             ? receiverData.firstname
+    //             : callerData.firstname}
+    //         </Text>
+    //         <Text style={styles.statusCallConnected}>{statusCall}</Text>
+    //       </View>
+    //     )}
+    //   </View> */}
 
-      <Voximplant.VideoView
-        videoStreamId={localVideoStreamId}
-        style={styles.localVideo}
-        showOnTop={true}
-      />
+    //   <Voximplant.VideoView
+    //     videoStreamId={localVideoStreamId}
+    //     style={styles.localVideo}
+    //     showOnTop={true}
+    //   />
+
+    //   <Voximplant.VideoView
+    //     videoStreamId={remoteVideoStreamId}
+    //     style={styles.remoteVideo}
+    //     scaleType={Voximplant.RenderScaleType.SCALE_FIT}
+    //   />
+
+    //   <View style={styles.cameraPreview}>
+    //     {statusCall !== 'Connected' && (
+    //       <>
+    //         <Text style={styles.nameCall}>{receiverData?.firstname}</Text>
+    //         <Text style={styles.statusCall}>{statusCall}</Text>
+    //       </>
+    //     )}
+    //   </View>
+
+    //   <CallActionBox
+    //     onHangupPressed={onHangupPressed}
+    //     onMutePressed={muteAudio}
+    //     isMicOn={isAudioMuted}
+    //     onReversePressed={onCameraReverse}
+    //     onCameraToggle={onCameraToggle}
+    //     isCameraOn={isCameraOn}
+    //     isMessageEnabled={isMessageOn}
+    //     toggleMessageOn={onMessageToggle}
+    //   />
+    // </View>
+
+    <View style={styles.page}>
+      <Pressable onPress={backToChat} style={styles.backButton}>
+        <Ionicons name="caret-back-sharp" color="white" size={25} />
+      </Pressable>
 
       <Voximplant.VideoView
         videoStreamId={remoteVideoStreamId}
         style={styles.remoteVideo}
+        showOnTop={true}
+        scaleType={Voximplant.RenderScaleType.SCALE_FIT}
       />
+
+      <Voximplant.VideoView
+        videoStreamId={localVideoStreamId}
+        style={styles.localVideo}
+        scaleType={Voximplant.RenderScaleType.SCALE_FIT}
+        // showOnTop={true}
+      />
+
+      <View style={styles.cameraPreview}>
+        <Text style={styles.name}>{receiverData?.firstname}</Text>
+        <Text style={styles.phoneNumber}>{statusCall}</Text>
+      </View>
 
       <CallActionBox
         onHangupPressed={onHangupPressed}
@@ -311,95 +337,54 @@ const CallingScreen = () => {
   );
 };
 
-export default CallingScreen;
-
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#333333',
-  },
-  nameAndStatus: {
-    // height: 75,
-
-    width: '70%',
-
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 10,
+  page: {
+    height: '100%',
+    backgroundColor: '#7b4e80',
   },
   cameraPreview: {
     flex: 1,
     alignItems: 'center',
-    // paddingTop: 50,
+    paddingTop: 10,
     paddingHorizontal: 10,
   },
   localVideo: {
     width: 100,
     height: 150,
-    margin: 10,
-    marginHorizontal: 0,
+    backgroundColor: '#ffff6e',
+
     borderRadius: 10,
+
     position: 'absolute',
     right: 10,
     top: 100,
   },
   remoteVideo: {
-    height: '100%',
-    backgroundColor: 'transparent',
+    backgroundColor: '#7b4e80',
     borderRadius: 10,
     position: 'absolute',
     left: 0,
     right: 0,
     top: 0,
-    bottom: 0,
+    bottom: 100,
   },
-
-  nameCall: {
-    fontSize: 50,
-    fontWeight: 'bold',
-    color: 'black',
-    marginTop: 50,
-    marginBottom: 20,
-  },
-  statusCall: {
-    fontSize: 25,
-  },
-
-  nameCallConnected: {
-    fontSize: 50,
+  name: {
+    fontSize: 30,
     fontWeight: 'bold',
     color: 'white',
+    marginTop: 50,
+    marginBottom: 15,
   },
-  statusCallConnected: {
-    fontSize: 25,
-    color: 'green',
+  phoneNumber: {
+    fontSize: 20,
+    color: 'white',
   },
-  nameAndButtonCont: {
-    backgroundColor: '#333333',
-    height: 100,
-    width: '100%',
-    marginTop: 'auto',
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-  },
-  iconButton: {
-    backgroundColor: '#4a4a4a',
-    padding: 10,
-    borderRadius: 50,
-  },
-  backCont: {
-    height: 80,
-    width: '100%',
-    paddingHorizontal: 30,
-    justifyContent: 'center',
-  },
-  pressableBackCont: {
-    height: 75,
-
-    width: '20%',
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 10,
     zIndex: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
+
+export default CallingScreen;

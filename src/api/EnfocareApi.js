@@ -7,9 +7,9 @@ import {
   VOXIMPLANT_APPLICATION_ID,
 } from '../config';
 import {AuthContext} from '../context/AuthContext';
-import encode from 'base64-js';
+// import encode from 'base64-js';
 import {Buffer} from 'buffer';
-import {log} from 'console';
+// import {log} from 'console';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const EnfocareApi = createContext();
@@ -17,10 +17,10 @@ export const EnfocareApi = createContext();
 export const EnfocareApiProvider = ({children}) => {
   const {userInfo} = useContext(AuthContext);
   const [userProfile, setUserProfile] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const setProfile = async profileDataInput => {
-    console.log('setProfile is called for', userInfo.email);
-
+    setIsLoading(true);
     try {
       const response = await axios.post(
         `${ENFOCARE_URL}/profile/save`,
@@ -66,13 +66,17 @@ export const EnfocareApiProvider = ({children}) => {
 
       setUserProfile(returnData);
 
-      return returnData; // Return the data for successful responses
+      setIsLoading(false);
+
+      return returnData;
     } catch (error) {
-      throw error; // Re-throw the error for other types of errors
+      setIsLoading(false);
+      throw error;
     }
   };
 
   const saveDoctorLobby = async returnData => {
+    setIsLoading(true);
     try {
       const response = await axios.post(
         `${ENFOCARE_URL}/lobby/save`,
@@ -86,33 +90,33 @@ export const EnfocareApiProvider = ({children}) => {
         },
       );
 
+      setIsLoading(false);
       return response;
     } catch (error) {
-      // Handle lobby save errors if needed
+      setIsLoading(false);
       console.error('Error saving doctor lobby:', error);
-      throw error; // Re-throw the error for other types of errors
+      throw error;
     }
   };
 
   const getDoctorLobby = async doctorEmail => {
+    setIsLoading(true);
     try {
       const response = await axios.get(`${ENFOCARE_URL}/lobby/${doctorEmail}`, {
         headers: {Authorization: `Bearer ${userInfo.token}`},
       });
 
-      console.log(response.status);
-
+      setIsLoading(false);
       return response;
     } catch (error) {
-      // Handle lobby save errors if needed
+      setIsLoading(false);
       console.error('Error saving doctor lobby:', error);
-      throw error; // Re-throw the error for other types of errors
+      throw error;
     }
   };
 
   const getProfile = async toFind => {
-    console.log('getProfile Called');
-
+    setIsLoading(true);
     try {
       const response = await axios.get(
         `${ENFOCARE_URL}/profile/${toFind ? toFind : userInfo.email}`,
@@ -121,24 +125,26 @@ export const EnfocareApiProvider = ({children}) => {
         },
       );
 
+      setIsLoading(false);
       return response.data;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      setIsLoading(false);
+      console.error('Error fetching user profiles:', error);
     }
   };
 
   const uploadAvatar = async selectedImageUri => {
-    console.log('uploadAvatar');
+    setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append('file', {
         uri: selectedImageUri,
-        type: 'image/jpeg', // Adjust the type based on the file type
-        name: 'image.jpg', // You can use the original file name here
+        type: 'image/jpeg',
+        name: 'image.jpg',
       });
 
       const response = await axios.post(
-        `${ENFOCARE_URL}/profile/avatar/${userProfile.email}`, // Update the endpoint accordingly
+        `${ENFOCARE_URL}/profile/avatar/${userProfile.email}`,
         formData,
         {
           headers: {
@@ -148,18 +154,18 @@ export const EnfocareApiProvider = ({children}) => {
         },
       );
 
-      console.log('File upload successful:', response.data);
+      setIsLoading(false);
 
-      // You can handle the response as needed, e.g., update user profile with file details
-
-      return response.data; // Return the data for successful responses
+      return response.data;
     } catch (error) {
+      setIsLoading(false);
       console.error('Error uploading file:', error);
-      throw error; // Re-throw the error for other types of errors
+      throw error;
     }
   };
 
   const getAvatar = async email => {
+    setIsLoading(true);
     try {
       const response = await axios.get(
         `${ENFOCARE_URL}/profile/avatar/${email}`,
@@ -176,15 +182,18 @@ export const EnfocareApiProvider = ({children}) => {
       const base64Image = Buffer.from(response.data, 'binary').toString(
         'base64',
       );
-
+      setIsLoading(false);
       // Use base64Image as needed, for example, setting it in state
       return `data:image/jpeg;base64, ${base64Image}`;
     } catch (error) {
-      // console.error('Error fetching avatar:', error);
+      console.error('Error fetching avatar:', error);
+
+      setIsLoading(false);
     }
   };
 
   const getDoctorListByField = async doctorField => {
+    setIsLoading(true);
     try {
       const response = await axios.get(
         `${ENFOCARE_URL}/profile/specialization/${doctorField}`,
@@ -199,26 +208,32 @@ export const EnfocareApiProvider = ({children}) => {
       } else {
         returnData = {};
       }
+
+      setIsLoading(false);
       return returnData;
     } catch (error) {
+      setIsLoading(false);
       console.error('Error fetching user doctors:', error);
     }
   };
 
   const getLobbyInformation = async email => {
+    setIsLoading(true);
     try {
       const response = await axios.get(`${ENFOCARE_URL}/lobby/${email}`, {
         headers: {Authorization: `Bearer ${userInfo.token}`},
       });
 
+      setIsLoading(false);
       return response.data;
     } catch (error) {
+      setIsLoading(false);
       console.error('Error fetching user doctors:', error);
     }
   };
 
   const getLobbyQueue = async email => {
-    console.log('getLobbyQueueCalled', email);
+    setIsLoading(true);
     try {
       const response = await axios.get(
         `${ENFOCARE_URL}/queue/count?email=${email}`,
@@ -226,25 +241,21 @@ export const EnfocareApiProvider = ({children}) => {
           headers: {Authorization: `Bearer ${userInfo.token}`},
         },
       );
-
-      console.log('THIS SHIT ', response.data);
-
+      setIsLoading(false);
       return response.data;
     } catch (error) {
+      setIsLoading(false);
       console.error('Error fetching user getLobbyQueue:', error);
     }
   };
 
   const saveQueueEntry = async (doctorSelected, patientEmail) => {
-    console.log('saveQueueEntry Called', patientEmail);
-
+    setIsLoading(true);
     try {
       const queueNumber = await getLobbyQueue(doctorSelected.email);
 
       const currentDate = new Date();
       const timeIn = currentDate.toISOString();
-
-      console.log('TIME! ', timeIn);
 
       const response = await axios.post(
         `${ENFOCARE_URL}/queue/save`,
@@ -258,18 +269,18 @@ export const EnfocareApiProvider = ({children}) => {
           headers: {Authorization: `Bearer ${userInfo.token}`},
         },
       );
-
-      console.log(response.data);
+      setIsLoading(false);
       return response;
     } catch (error) {
+      setIsLoading(false);
       console.error('Error saving doctor lobby:', error.response);
 
-      throw error; // Re-throw the error for other types of errors
+      throw error;
     }
   };
 
   const getPatientQueue = async doctorEmail => {
-    console.log('getPatientQueue ', 'called');
+    setIsLoading(true);
     try {
       const response = await axios.get(
         `${ENFOCARE_URL}/queue/list?doctor=${doctorEmail}`,
@@ -281,20 +292,23 @@ export const EnfocareApiProvider = ({children}) => {
       if (response.status === 200) {
         return response.data;
       } else if (response.status === 404) {
-        return []; // Return an empty array for 404 status
+        return [];
       } else {
         console.error('Unexpected status code:', response.status);
-        // Throw an error for unexpected status codes
+
         throw new Error(`Unexpected status code: ${response.status}`);
       }
+
+      setIsLoading(false);
     } catch (error) {
+      setIsLoading(false);
       console.error('Error fetching patient queue:', error);
-      throw error; // Rethrow the error to propagate it to the caller
+      throw error;
     }
   };
 
   const createVoximplantAccount = async profile => {
-    console.log('createVoximplantAccount called');
+    setIsLoading(true);
     const displayName = profile.firstname + ' ' + profile.lastname;
 
     try {
@@ -305,25 +319,128 @@ export const EnfocareApiProvider = ({children}) => {
         // Concatenate firstname, lastname, and numeric part of the phone number
         const voxUsername = `${profile.firstname.toLowerCase()}${profile.lastname.toLowerCase()}${numericPhone}`;
 
-        console.log(voxUsername);
-
         const userRawCredential = await AsyncStorage.getItem('userCredential');
         const userCredential = JSON.parse(userRawCredential);
-
-        console.log('USER RAW', userCredential);
 
         const response = await axios.get(
           `https://api.voximplant.com/platform_api/AddUser/?account_id=${VOXIMPLANT_ACCOUNT_ID}&api_key=${VOXIMPLANT_API_KEY}&user_name=${voxUsername}&user_display_name=${displayName}&user_password=${userCredential.password}&application_id=${VOXIMPLANT_APPLICATION_ID}`,
         );
 
-        // Handle the response...
-        console.log(response.data);
+        setIsLoading(false);
       } else {
-        console.log('Invalid profile data');
+        setIsLoading(false);
       }
     } catch (error) {
-      // Handle errors...
+      setIsLoading(false);
       console.error(error);
+    }
+  };
+
+  const getProfileByPhone = async phone => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(
+        `${ENFOCARE_URL}/profile/phone/${phone}`,
+        {
+          headers: {Authorization: `Bearer ${userInfo.token}`},
+        },
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (error) {
+      setIsLoading(false);
+      console.error('Error fetching user profile By Phone:', error);
+    }
+  };
+
+  const saveConsultation = async consultationInfo => {
+    try {
+      // Ensure the date format and other data match what your backend expects
+      const response = await axios.post(
+        `${ENFOCARE_URL}/save`, // Corrected endpoint to match your Spring Boot backend
+        {
+          doctor: consultationInfo.doctor,
+          patient: consultationInfo.patient,
+          date: consultationInfo.date,
+          diagnosis: consultationInfo.diagnosis,
+          treatment: consultationInfo.treatment,
+          ailment: consultationInfo.ailment,
+          symptoms: consultationInfo.symptoms,
+        },
+        {
+          headers: {Authorization: `Bearer ${userInfo.token}`}, // Ensure the token is handled securely
+        },
+      );
+
+      alert('Consultation saved successfully!'); // User feedback on success
+      return response.data;
+    } catch (error) {
+      console.error('Error saving consultation:', error.response || error);
+      alert('Failed to save consultation.'); // User feedback on failure
+      throw error;
+    }
+  };
+
+  function getMimeType(file) {
+    const extension = file.uri.split('.').pop().toLowerCase();
+    let type;
+    switch (extension) {
+      case 'pdf':
+        type = 'application/pdf';
+        break;
+      case 'jpg':
+      case 'jpeg':
+        type = 'image/jpeg';
+        break;
+      case 'png':
+        type = 'image/png';
+        break;
+      case 'doc':
+        type = 'application/msword';
+        break;
+      case 'docx':
+        type =
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        break;
+      // Add more cases as needed
+      default:
+        type = 'application/octet-stream'; // generic stream of bytes
+    }
+    return type;
+  }
+
+  const uploadDiagnosisFile = async (patientEmail, doctorEmail, file) => {
+    setIsLoading(true); // Start loading
+    try {
+      const formData = new FormData();
+      const mimeType = getMimeType(file); // Dynamically determine the MIME type
+
+      formData.append('file', {
+        uri: file.uri,
+        type: mimeType, // Use the dynamically determined MIME type
+        name: file.name || 'uploaded_file',
+      });
+
+      const response = await axios.post(
+        `${ENFOCARE_URL}/upload/${patientEmail}/${doctorEmail}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        },
+      );
+
+      setIsLoading(false); // End loading
+      alert('Diagnosis file uploaded successfully!'); // User feedback
+      return response.data;
+    } catch (error) {
+      setIsLoading(false); // End loading
+      console.error('Error uploading diagnosis file:', error.response || error);
+      alert('Failed to upload diagnosis file.'); // User feedback
+      throw error;
     }
   };
 
@@ -350,16 +467,15 @@ export const EnfocareApiProvider = ({children}) => {
         }
       } catch (error) {
         setUserProfile({});
-        console.error('Error fetching user profile: Line 260', error);
       }
     };
-    if (userInfo) {
+    if (Object.keys(userInfo).length !== 0) {
       fetchProfile();
     }
   }, [userInfo]);
 
   useEffect(() => {
-    console.log('THIS IS TO NOTIFY YOU USERPROFILE HAS CHANGE');
+    // console.log('THIS IS TO NOTIFY YOU USERPROFILE HAS CHANGE');
   }, [userProfile]);
 
   return (
@@ -375,6 +491,8 @@ export const EnfocareApiProvider = ({children}) => {
         getLobbyInformation,
         saveQueueEntry,
         getPatientQueue,
+        getProfileByPhone,
+        saveConsultation,
       }}>
       {children}
     </EnfocareApi.Provider>

@@ -21,9 +21,6 @@ export const AuthProvider = ({children}) => {
         password,
       })
       .then(res => {
-        // let userInfo = res.data;
-        // setUserInfo(userInfo);
-        // AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
         setIsLoading(false);
       })
       .catch(error => {
@@ -142,16 +139,13 @@ export const AuthProvider = ({children}) => {
     console.log('isLoggedIn CALLED ');
 
     try {
-      // Check if userInfo exists and the token is valid
       if (userInfo && (await checkTokenValidity())) {
-        // Set the user info if the token is valid
         setUserInfo(userInfo);
       } else {
         logout();
       }
     } catch (e) {
-      // Handle errors related to AsyncStorage or other issues
-      console.log(`is logged in error ${e}`);
+      console.error(`is logged in error ${e}`);
     }
   };
 
