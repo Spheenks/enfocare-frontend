@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {Modal, useContext, useEffect, useState} from 'react';
 import {
   View,
   StyleSheet,
@@ -21,11 +21,14 @@ import Entypo from 'react-native-vector-icons/Entypo';
 import {Voximplant} from 'react-native-voximplant';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {APP_NAME, ACC_NAME} from '../../config';
+import UploadDiagnosis from '../../Components/UploadDiagnosis/UploadDiagnosis';
 
 const DashboardScreen = () => {
   const voximplant = Voximplant.getInstance();
   const navigation = useNavigation();
   const {userProfile, uploadAvatar, getAvatar} = useContext(EnfocareApi);
+
+  const [isDiagnosisModalVisible, setIsDiagnosisModalVisible] = useState(false);
 
   const {logout} = useContext(AuthContext);
 
@@ -80,6 +83,18 @@ const DashboardScreen = () => {
         }
       });
     });
+  };
+
+  const onUploadDiagnosis = () => {
+    setIsDiagnosisModalVisible(!isDiagnosisModalVisible);
+  };
+
+  const onConsultations = () => {
+    navigation.navigate('DoctorConsultationRecordsScreen');
+  };
+
+  const onConsultationsPatient = () => {
+    navigation.navigate('PatientConsultationScreen');
   };
 
   useEffect(() => {
@@ -209,14 +224,25 @@ const DashboardScreen = () => {
           <PatientMenu
             onLogout={onLogoutPressed}
             onFindDoctor={onConsultPressed}
+            onConsultationPatient={onConsultationsPatient}
           />
         ) : (
           <DoctorMenu
             onLogout={onLogoutPressed}
             onDoctorQueue={onDoctorQueue}
+            onUpload={onUploadDiagnosis}
+            onConsultations={onConsultations}
           />
         )}
       </View>
+
+      <UploadDiagnosis
+        isVisible={isDiagnosisModalVisible}
+        onClose={() => setIsDiagnosisModalVisible(false)}
+        onUploadSuccess={() => {
+          console.log('Upload Successful');
+        }}
+      />
     </View>
   );
 };
@@ -276,6 +302,47 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  //MODAL
+
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+  },
+  buttonClose: {
+    backgroundColor: '#2196F3',
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
   },
 });
 

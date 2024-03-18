@@ -11,7 +11,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const DoctorMenu = ({onLogout, onDoctorQueue, onUpload}) => {
+const DoctorMenu = ({onLogout, onDoctorQueue, onUpload, onConsultations}) => {
   return (
     <View style={styles.main}>
       <View style={styles.sub_main}>
@@ -32,7 +32,7 @@ const DoctorMenu = ({onLogout, onDoctorQueue, onUpload}) => {
         </TouchableOpacity>
       </View>
       <View style={styles.sub_main}>
-        <TouchableOpacity style={styles.iconCont}>
+        <TouchableOpacity style={styles.iconCont} onPress={onConsultations}>
           <Fontisto name="prescription" size={80} color="#74DA74" />
 
           <Text style={styles.pressableLabel}>Consultations</Text>

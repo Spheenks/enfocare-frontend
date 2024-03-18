@@ -1,5 +1,11 @@
 import axios from 'axios';
-import React, {createContext, useContext, useState, useEffect} from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 import {
   ENFOCARE_URL,
   VOXIMPLANT_ACCOUNT_ID,
@@ -11,6 +17,7 @@ import {AuthContext} from '../context/AuthContext';
 import {Buffer} from 'buffer';
 // import {log} from 'console';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {log} from 'console';
 
 export const EnfocareApi = createContext();
 
@@ -383,7 +390,16 @@ export const EnfocareApiProvider = ({children}) => {
   };
 
   function getMimeType(file) {
-    const extension = file.uri.split('.').pop().toLowerCase();
+    console.log('Uploading file:', file);
+    // Directly return the type if available, this handles content:// URIs or any case where MIME is directly known
+    if (file.type) {
+      return file.type;
+    }
+
+    // Extracting the extension and determining the MIME type based on the file extension
+    const extension = file.name.split('.').pop().toLowerCase();
+
+    console.log('GAGAGAGAGAGA' + extension);
     let type;
     switch (extension) {
       case 'pdf':
@@ -403,46 +419,156 @@ export const EnfocareApiProvider = ({children}) => {
         type =
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         break;
-      // Add more cases as needed
+      case 'xls':
+        type = 'application/vnd.ms-excel';
+        break;
+      case 'xlsx':
+        type =
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        break;
+      case 'ppt':
+        type = 'application/vnd.ms-powerpoint';
+        break;
+      case 'pptx':
+        type =
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+        break;
+      case 'txt':
+        type = 'text/plain';
+        break;
+      case 'csv':
+        type = 'text/csv';
+        break;
+      case 'mp3':
+        type = 'audio/mpeg';
+        break;
+      case 'mp4':
+        type = 'video/mp4';
+        break;
+      case 'wav':
+        type = 'audio/wav';
+        break;
+      case 'gif':
+        type = 'image/gif';
+        break;
+      // Add more cases as needed for other file types you expect to handle
       default:
-        type = 'application/octet-stream'; // generic stream of bytes
+        type = 'application/octet-stream'; // Generic byte stream type for unknown file types
     }
     return type;
   }
 
-  const uploadDiagnosisFile = async (patientEmail, doctorEmail, file) => {
-    setIsLoading(true); // Start loading
+  const uploadDiagnosisFile = async (
+    patientEmail,
+    doctorEmail,
+    file,
+    consultationId,
+  ) => {
+    console.log('BET1', patientEmail);
+    console.log('BET2', consultationId);
+    console.log('BET3', doctorEmail);
+    console.log('EnfocareApi.js -  FILE UPLOADED : ' + file);
+    console.log(
+      `EnfocareApi.js - FILE UPLOADED : Name: ${file.name}, Type: ${file.type}, URI: ${file.uri}`,
+    );
+
     try {
       const formData = new FormData();
-      const mimeType = getMimeType(file); // Dynamically determine the MIME type
-
       formData.append('file', {
         uri: file.uri,
-        type: mimeType, // Use the dynamically determined MIME type
-        name: file.name || 'uploaded_file',
+        type: file.type,
+        name: file.name,
       });
 
-      const response = await axios.post(
-        `${ENFOCARE_URL}/upload/${patientEmail}/${doctorEmail}`,
-        formData,
+      const apiUri = `${ENFOCARE_URL}/medical-file/upload/${patientEmail}/${doctorEmail}/${consultationId}`;
+
+      console.log('Uploading to:', apiUri);
+
+      const response = await axios.post(apiUri, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      });
+
+      if (response.status >= 200 && response.status < 300) {
+        console.log('File upload successful', response.data);
+      } else {
+        console.error('File upload failed with status:', response.status);
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  const fetchMedicalFilePatientEmails = async doctorEmail => {
+    console.log('FETCHED CALLED');
+    setIsLoading(true);
+    try {
+      const response = await axios.get(
+        `${ENFOCARE_URL}/medical-file/patients/${doctorEmail}`, // Adjusted endpoint to include doctorEmail
         {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${userInfo.token}`,
-          },
+          headers: {Authorization: `Bearer ${userInfo.token}`},
         },
       );
 
-      setIsLoading(false); // End loading
-      alert('Diagnosis file uploaded successfully!'); // User feedback
-      return response.data;
+      setIsLoading(false);
+      return response.data; // Assuming this returns an array of emails
     } catch (error) {
-      setIsLoading(false); // End loading
-      console.error('Error uploading diagnosis file:', error.response || error);
-      alert('Failed to upload diagnosis file.'); // User feedback
+      setIsLoading(false);
+      console.error('Error fetching patient emails:', error);
       throw error;
     }
   };
+
+  // Function to fetch consultation records for a patient
+  const fetchConsultationRecordsForPatient = useCallback(
+    async patientEmail => {
+      setIsLoading(true);
+      try {
+        const response = await axios.get(
+          `${ENFOCARE_URL}/consultation/patient/${patientEmail}`,
+          {
+            headers: {Authorization: `Bearer ${userInfo.token}`},
+          },
+        );
+
+        setIsLoading(false);
+        return response.data; // Assuming the backend returns an array of consultation records
+      } catch (error) {
+        setIsLoading(false);
+        console.error(
+          'Error fetching consultation records for patient:',
+          error,
+        );
+        throw error;
+      }
+    },
+    [userInfo.token],
+  ); // Dependency array, re-create this function only if userInfo.token changes
+
+  // Function to fetch consultation records for a doctor
+  const fetchConsultationRecordsForDoctor = useCallback(
+    async doctorEmail => {
+      setIsLoading(true);
+      try {
+        const response = await axios.get(
+          `${ENFOCARE_URL}/consultation/doctor/${doctorEmail}`,
+          {
+            headers: {Authorization: `Bearer ${userInfo.token}`},
+          },
+        );
+
+        setIsLoading(false);
+        return response.data; // Assuming the backend returns an array of consultation records
+      } catch (error) {
+        setIsLoading(false);
+        console.error('Error fetching consultation records for doctor:', error);
+        throw error;
+      }
+    },
+    [userInfo.token],
+  ); // Dependency array, re-create this function only if userInfo.token changes
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -493,6 +619,10 @@ export const EnfocareApiProvider = ({children}) => {
         getPatientQueue,
         getProfileByPhone,
         saveConsultation,
+        fetchMedicalFilePatientEmails,
+        uploadDiagnosisFile,
+        fetchConsultationRecordsForDoctor,
+        fetchConsultationRecordsForPatient,
       }}>
       {children}
     </EnfocareApi.Provider>

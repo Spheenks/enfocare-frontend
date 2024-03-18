@@ -13,6 +13,8 @@ import LobbyScreen from '../../Screens/LobbyScreen';
 import CallingScreen from '../../Screens/CallingScreen';
 import IncomingCallScreen from '../../Screens/IncomingCallScreen';
 import Spinner from 'react-native-loading-spinner-overlay';
+import DoctorConsultationRecordsScreen from '../../Screens/DoctorConsultationRecordsScreen/DoctorConsultationRecordsScreen';
+import PatientConsultationScreen from '../../Screens/PatientConsultationScreen/PatientConsultationScreen';
 // import ChatScreen from "../../Screens/ChatScreen/ChatScreen";
 // import LobbyScreen from "../../Screens/LobbyScreen/LobbyScreen";
 // import TestScreen from "../../Screens/TestScreen";
@@ -48,6 +50,16 @@ const Navigation = () => {
             <Stack.Screen
               name="ConsultListingScreen"
               component={ConsultListingScreen}
+            />
+
+            <Stack.Screen
+              name="DoctorConsultationRecordsScreen"
+              component={DoctorConsultationRecordsScreen}
+            />
+
+            <Stack.Screen
+              name="PatientConsultationScreen"
+              component={PatientConsultationScreen}
             />
 
             <Stack.Screen name="LobbyScreen" component={LobbyScreen} />
