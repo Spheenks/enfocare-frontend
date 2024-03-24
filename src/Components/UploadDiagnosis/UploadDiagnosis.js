@@ -25,27 +25,7 @@ const UploadDiagnosis = ({
     useContext(EnfocareApi);
   const [selectedFile, setSelectedFile] = useState(null);
   const [emailList, setEmailList] = useState([]);
-  // const [selectedEmail, setSelectedEmail] = useState();
   const [isLoading, setIsLoading] = useState(false);
-
-  // useEffect(() => {
-  //   const fetchEmails = async () => {
-  //     setIsLoading(true);
-  //     try {
-  //       const emails = await fetchMedicalFilePatientEmails(userProfile.email);
-  //       setEmailList(emails);
-  //       setSelectedEmail(emails[0]);
-  //     } catch (error) {
-  //       console.error('Failed to fetch emails:', error);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-
-  //   if (userProfile.email) {
-  //     fetchEmails();
-  //   }
-  // }, [userProfile]);
 
   const handleFileSelect = async () => {
     try {
@@ -66,9 +46,7 @@ const UploadDiagnosis = ({
 
   const handleUpload = async () => {
     const doctorEmail = userProfile.email;
-    console.log('BET1', patientEmail);
-    console.log('BET2', consultationId);
-    console.log('BET3', doctorEmail);
+
     if (!patientEmail || !selectedFile) {
       alert('Please select a patient email and a file to upload.');
       return;

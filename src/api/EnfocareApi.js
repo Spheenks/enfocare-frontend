@@ -570,6 +570,24 @@ export const EnfocareApiProvider = ({children}) => {
     [userInfo.token],
   ); // Dependency array, re-create this function only if userInfo.token changes
 
+  const fetchMedicalFilesByConsultationId = async consultationId => {
+    console.log('fetchMedicalFilesByConsultationId called');
+    try {
+      const response = await axios.get(
+        `${ENFOCARE_URL}/medical-file/consultation/${consultationId}`,
+        {
+          headers: {Authorization: `Bearer ${userInfo.token}`},
+        },
+      );
+
+      console.log(response.data);
+      return response.data; // Assuming this returns an array of medical file objects
+    } catch (error) {
+      console.error('Error fetching medical files:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -623,6 +641,7 @@ export const EnfocareApiProvider = ({children}) => {
         uploadDiagnosisFile,
         fetchConsultationRecordsForDoctor,
         fetchConsultationRecordsForPatient,
+        fetchMedicalFilesByConsultationId,
       }}>
       {children}
     </EnfocareApi.Provider>
